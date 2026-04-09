@@ -42,6 +42,17 @@ on:
       RECOVERY_INSTALLER:
         description: 'Include recovery installer zip'
         required: false
+
+      - name: Fix Kernel Path
+  run: |
+    # Ensure kernel is in correct location
+    if [ -f "device/oneplus/CPH2487/prebuilt/kernel" ]; then
+      echo "Kernel found in prebuilt directory"
+      chmod +x device/oneplus/CPH2487/prebuilt/kernel
+    else
+      echo "ERROR: Kernel not found!"
+      exit 1
+    fi
         default: 'true'
         type: boolean
       RECOVERY_TAR:

@@ -57,12 +57,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             bc bison build-essential ccache curl flex g++-multilib gcc-multilib \
-            git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev \
+            git git-lfs gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev \
             lib32z1-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev \
             libssl-dev libwxgtk3.0-gtk3-dev libxml2 libxml2-utils lzop \
             pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev \
             python3 python-is-python3
-          # Install repo tool properly
           mkdir -p ~/.local/bin
           curl -o ~/.local/bin/repo https://storage.googleapis.com/git-repo-downloads/repo
           chmod +x ~/.local/bin/repo
@@ -72,25 +71,22 @@ jobs:
         run: |
           git config --global user.name "OrangeFox Builder"
           git config --global user.email "builder@orangefox.tech"
+          git lfs install
 
-      - name: Initialize OrangeFox Manifest
+      - name: Clone OrangeFox Sync Script
+        run: |
+          git clone https://gitlab.com/OrangeFox/sync.git \
+            ${GITHUB_WORKSPACE}/ofox_sync_script --depth=1
+          echo "Sync script contents:"
+          ls ${GITHUB_WORKSPACE}/ofox_sync_script/
+
+      - name: Initialize & Sync OrangeFox Source
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/OrangeFox_sync
           cd ${GITHUB_WORKSPACE}/OrangeFox_sync
-          repo init \
-            -u https://gitlab.com/OrangeFox/sync.git \
-            -b ${{ github.event.inputs.MANIFEST_BRANCH }} \
-            --depth=1
-
-      - name: Sync OrangeFox Source
-        run: |
-          cd ${GITHUB_WORKSPACE}/OrangeFox_sync
-          repo sync \
-            -j$(nproc --all) \
-            --force-sync \
-            --no-clone-bundle \
-            --no-tags \
-            -c
+          bash ${GITHUB_WORKSPACE}/ofox_sync_script/orangefox_sync.sh \
+            --branch ${{ github.event.inputs.MANIFEST_BRANCH }} \
+            --path ${GITHUB_WORKSPACE}/OrangeFox_sync
 
       - name: Clone Device Tree
         run: |
@@ -126,26 +122,14 @@ jobs:
 
       - name: Fix BoardConfig - Replace sm8350 with sm8475
         run: |
-          # The device tree BoardConfig.mk incorrectly references sm8350-common
-          # but the actual common tree is sm8475-common - fix it here
           BOARDCONFIG="${GITHUB_WORKSPACE}/OrangeFox_sync/${{ github.event.inputs.DEVICE_PATH }}/BoardConfig.mk"
           sed -i 's|device/oneplus/sm8350-common/BoardConfigCommon.mk|device/oneplus/sm8475-common/BoardConfigCommon.mk|g' "$BOARDCONFIG"
           echo "Fixed BoardConfig.mk - verified:"
           grep "sm84" "$BOARDCONFIG"
 
-      - name: Setup Build Environment
-        run: |
-          cd ${GITHUB_WORKSPACE}/OrangeFox_sync
-          set +e
-          source build/envsetup.sh
-          export ALLOW_MISSING_DEPENDENCIES=true
-          export FOX_BUILD_DEVICE=${{ github.event.inputs.DEVICE_NAME }}
-          export LC_ALL="C"
-
       - name: Build OrangeFox Recovery
         run: |
           cd ${GITHUB_WORKSPACE}/OrangeFox_sync
-          set +e
           source build/envsetup.sh
           export ALLOW_MISSING_DEPENDENCIES=true
           export FOX_BUILD_DEVICE=${{ github.event.inputs.DEVICE_NAME }}
@@ -154,35 +138,32 @@ jobs:
           make clean
           mka adbd ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
 
-      - name: Get Build Date & Output Info
+      - name: Set Output Variables
         run: |
           echo "BUILD_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
-          cd ${GITHUB_WORKSPACE}/OrangeFox_sync
           echo "OUT_DIR=out/target/product/${{ github.event.inputs.DEVICE_NAME }}" >> $GITHUB_ENV
 
       - name: Check Recovery Output
         run: |
-          ls -la ${GITHUB_WORKSPACE}/OrangeFox_sync/${{ env.OUT_DIR }}/
-          ls ${GITHUB_WORKSPACE}/OrangeFox_sync/${{ env.OUT_DIR }}/*.img || true
-          ls ${GITHUB_WORKSPACE}/OrangeFox_sync/${{ env.OUT_DIR }}/OrangeFox*.zip || true
+          ls -la ${GITHUB_WORKSPACE}/OrangeFox_sync/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/ || true
 
       - name: Upload to Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
-            OrangeFox_sync/${{ env.OUT_DIR }}/OrangeFox*.zip
-            OrangeFox_sync/${{ env.OUT_DIR }}/OrangeFox*.img
-            OrangeFox_sync/${{ env.OUT_DIR }}/recovery.img
+            OrangeFox_sync/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/OrangeFox*.zip
+            OrangeFox_sync/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/OrangeFox*.img
+            OrangeFox_sync/out/target/product/${{ github.event.inputs.DEVICE_NAME }}/recovery.img
           name: OrangeFox-${{ github.event.inputs.DEVICE_NAME }}-${{ env.BUILD_DATE }}
           tag_name: ${{ github.run_id }}
           body: |
             ## OrangeFox Recovery for OnePlus 11R (udon / CPH2487)
-            
+
             **Build Date:** ${{ env.BUILD_DATE }}
             **Manifest:** ${{ github.event.inputs.MANIFEST_BRANCH }}
             **Device:** ${{ github.event.inputs.DEVICE_NAME }} (CPH2487)
             **Makefile:** ${{ github.event.inputs.DEVICE_MAKEFILE }}
-            
+
             ### Repos used:
             - Device Tree: sshJovian/device_oneplus_CPH2487 @ 13
             - Common Tree: sshJovian/device_oneplus_sm8475-common @ 13

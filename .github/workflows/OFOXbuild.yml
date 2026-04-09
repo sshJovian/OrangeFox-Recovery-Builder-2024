@@ -5,12 +5,12 @@ on:
       MANIFEST_BRANCH:
         description: 'OrangeFox Branch'
         required: true
-        default: 'fox_12.1'
+        default: '12.1'
         type: choice
         options:
-          - fox_14.1
-          - fox_12.1
-          - fox_11.0
+          - 14.1
+          - 12.1
+          - 11.0
       DEVICE_TREE_URL:
         description: 'Device tree address'
         required: true
@@ -50,7 +50,6 @@ on:
         type: boolean
         required: true
         default: true
-
 jobs:
   build:
     name: Build OrangeFox for ${{ github.event.inputs.DEVICE_NAME }}

@@ -14,7 +14,7 @@ on:
       DEVICE_TREE_URL:
         description: 'Device tree address'
         required: true
-        default: 'https://github.com/sshJovian/device_oneplus_CPH2487'
+        default: 'https://github.com/sshJovian/device_oneplus_udon'
       DEVICE_TREE_BRANCH:
         description: 'Device branch'
         required: true
@@ -22,11 +22,11 @@ on:
       DEVICE_PATH:
         description: 'Device tree location'
         required: true
-        default: 'device/oneplus/CPH2487'
+        default: 'device/oneplus/udon'
       DEVICE_NAME:
-        description: 'Model name'
+        description: 'Model name (codename)'
         required: true
-        default: 'CPH2487'
+        default: 'udon'
       BUILD_TARGET:
         description: 'Build Target Partition'
         required: true
@@ -132,24 +132,24 @@ jobs:
       - name: Clone Prebuilt Kernel
         run: |
           cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-          git clone https://github.com/sshJovian/device_oneplus_CPH2487-prebuilt -b main device/oneplus/CPH2487/prebuilt
+          git clone https://github.com/sshJovian/device_oneplus_CPH2487-prebuilt -b main device/oneplus/udon/prebuilt
 
       - name: Clone Vendor Tree
         run: |
           cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-          git clone https://github.com/sshJovian/vendor_oneplus_2487 -b main vendor/oneplus/2487
+          git clone https://github.com/sshJovian/vendor_oneplus_2487 -b main vendor/oneplus/udon
 
       - name: Fix Kernel Path & Permissions
         run: |
           cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-          if [ -f "device/oneplus/CPH2487/prebuilt/kernel" ]; then
+          if [ -f "device/oneplus/udon/prebuilt/kernel" ]; then
             echo "✅ Kernel found"
-            chmod +x device/oneplus/CPH2487/prebuilt/kernel
+            chmod +x device/oneplus/udon/prebuilt/kernel
           else
             echo "❌ Kernel not found!"
             exit 1
           fi
-          if [ -f "device/oneplus/CPH2487/prebuilt/dtbo.img" ]; then
+          if [ -f "device/oneplus/udon/prebuilt/dtbo.img" ]; then
             echo "✅ DTBO found"
           fi
 

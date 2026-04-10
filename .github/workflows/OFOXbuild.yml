@@ -108,8 +108,13 @@ jobs:
       - name: Clone OrangeFox Vendor Recovery
         run: |
           cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-          git clone https://gitlab.com/OrangeFox/vendor/recovery.git vendor/recovery
-          ls -la vendor/recovery/
+          if [ -d "vendor/recovery" ]; then
+            echo "✅ vendor/recovery already exists, skipping clone"
+            ls -la vendor/recovery/
+          else
+            git clone https://gitlab.com/OrangeFox/vendor/recovery.git vendor/recovery
+            ls -la vendor/recovery/
+          fi
 
       - name: Create Symbolic Link for fox.mk
         run: |

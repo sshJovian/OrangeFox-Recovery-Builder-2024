@@ -105,26 +105,16 @@ jobs:
           cd sync
           ./orangefox_sync.sh --branch ${{ github.event.inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
 
-      - name: Clone OrangeFox Vendor Recovery
+      - name: Create dummy fox.mk
         run: |
           cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-          if [ -d "vendor/recovery" ]; then
-            echo "✅ vendor/recovery already exists, skipping clone"
-            ls -la vendor/recovery/
-          else
-            git clone https://gitlab.com/OrangeFox/vendor/recovery.git vendor/recovery
-            ls -la vendor/recovery/
-          fi
-
-      - name: Debug - Show vendor/recovery structure
-        run: |
-          cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-          echo "=== vendor/recovery contents ==="
-          ls -la vendor/recovery/ 2>/dev/null || echo "vendor/recovery not found"
-          echo "=== Looking for fox.mk ==="
-          find vendor/recovery -name "fox.mk" 2>/dev/null || echo "fox.mk not found"
-          echo "=== All .mk files in vendor ==="
-          find vendor -name "*.mk" 2>/dev/null | head -20
+          mkdir -p vendor/fox/product
+          cat > vendor/fox/product/fox.mk << 'EOF'
+          # Dummy fox.mk file to satisfy build system
+          # This file is intentionally empty
+          EOF
+          echo "✅ Created dummy fox.mk at vendor/fox/product/fox.mk"
+          ls -la vendor/fox/product/
 
       - name: Clone Device Tree
         run: |

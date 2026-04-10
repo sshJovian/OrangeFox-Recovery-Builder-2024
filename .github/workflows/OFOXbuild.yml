@@ -116,17 +116,15 @@ jobs:
             ls -la vendor/recovery/
           fi
 
-      - name: Create Symbolic Link for fox.mk
+      - name: Debug - Show vendor/recovery structure
         run: |
           cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
-          if [ -f "vendor/recovery/fox.mk" ]; then
-            mkdir -p vendor/fox/product
-            ln -sf ../../vendor/recovery/fox.mk vendor/fox/product/fox.mk
-            echo "✅ Created symlink for fox.mk"
-          else
-            echo "⚠️ fox.mk not found in vendor/recovery"
-            find vendor/recovery -name "*.mk" | head -10
-          fi
+          echo "=== vendor/recovery contents ==="
+          ls -la vendor/recovery/ 2>/dev/null || echo "vendor/recovery not found"
+          echo "=== Looking for fox.mk ==="
+          find vendor/recovery -name "fox.mk" 2>/dev/null || echo "fox.mk not found"
+          echo "=== All .mk files in vendor ==="
+          find vendor -name "*.mk" 2>/dev/null | head -20
 
       - name: Clone Device Tree
         run: |

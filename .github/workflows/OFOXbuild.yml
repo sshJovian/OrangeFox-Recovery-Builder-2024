@@ -105,6 +105,24 @@ jobs:
           cd sync
           ./orangefox_sync.sh --branch ${{ github.event.inputs.MANIFEST_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
 
+      - name: Clone OrangeFox Vendor Recovery
+        run: |
+          cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
+          git clone https://gitlab.com/OrangeFox/vendor/recovery.git vendor/recovery
+          ls -la vendor/recovery/
+
+      - name: Create Symbolic Link for fox.mk
+        run: |
+          cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
+          if [ -f "vendor/recovery/fox.mk" ]; then
+            mkdir -p vendor/fox/product
+            ln -sf ../../vendor/recovery/fox.mk vendor/fox/product/fox.mk
+            echo "✅ Created symlink for fox.mk"
+          else
+            echo "⚠️ fox.mk not found in vendor/recovery"
+            find vendor/recovery -name "*.mk" | head -10
+          fi
+
       - name: Clone Device Tree
         run: |
           cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ github.event.inputs.MANIFEST_BRANCH }}
